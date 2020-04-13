@@ -2,9 +2,13 @@ package ro.pub.cs.systems.eim.Colocviu1_13;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.provider.SyncStateContract;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -16,6 +20,8 @@ public class Colocviu1_13MainActivity extends AppCompatActivity {
     EditText editText, tot;
     int total = 0;
     final public static String TOTAL = "total";
+
+    private IntentFilter intentFilter = new IntentFilter();
 
     private ButtonClickListener buttonClickListener = new ButtonClickListener();
     class ButtonClickListener implements View.OnClickListener {
@@ -47,6 +53,12 @@ public class Colocviu1_13MainActivity extends AppCompatActivity {
             editText.setText(text);
             total++;
             tot.setText(String.valueOf(total));
+
+            if (total == 4) {
+                Intent intent = new Intent(getApplicationContext(), MyService.class);
+                intent.putExtra("text", text);
+                getApplicationContext().startService(intent);
+            }
         }
     }
 
@@ -79,6 +91,8 @@ public class Colocviu1_13MainActivity extends AppCompatActivity {
         } else {
             total = 0;
         }
+
+        intentFilter.addAction("broadcast_text");
     }
 
     @Override
@@ -105,6 +119,35 @@ public class Colocviu1_13MainActivity extends AppCompatActivity {
             total = 0;
             tot.setText("0");
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        Intent intent = new Intent(this, MyService.class);
+        stopService(intent);
+        super.onDestroy();
+    }
+
+    private MessageBroadcastReceiver messageBroadcastReceiver = new MessageBroadcastReceiver();
+
+    private static class MessageBroadcastReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.d("BROADCAST", intent.getStringExtra("broadcast"));
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        registerReceiver(messageBroadcastReceiver, intentFilter);
+    }
+
+    @Override
+    protected void onPause() {
+        unregisterReceiver(messageBroadcastReceiver);
+        super.onPause();
     }
 
 }
